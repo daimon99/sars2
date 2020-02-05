@@ -31,7 +31,7 @@ class KouzhaoMonitor:
         self.search_url = search_url
         self.notify_robot = notify_robot
         self.css_selector = css_selector
-        self.invalid_goods_keywords = '非卖品 售罄 国际 无货'.split(' ')
+        self.invalid_goods_keywords = '非卖品 售罄 国际 无货 婴儿口罩'.split(' ')
         self.notify_history = {}
         self.duplicate_check_span_in_seconds = 60 * 5
 
