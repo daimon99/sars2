@@ -6,7 +6,7 @@
 安装说明
 ----------
 
-1. 安装 python：https://www.python.org/downloads/
+1. 安装 python3：https://www.python.org/downloads/
 2. 如果不是mac，请自己下载 chromedriver，并调整 `kouzhao.py` 中的变量值
    chromedriver下载地址：https://chromedriver.chromium.org/ chromedriver与代码放在一个目录下。
 3. 安装
