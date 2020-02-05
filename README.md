@@ -12,12 +12,12 @@
 3. 安装
 
 ```bash
-pip install -r requirements.txt
+make install
 ```
 
 运行
 ------
 
 ```
-python src/kouzhao.py
+make run
 ```
