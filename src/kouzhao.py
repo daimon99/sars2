@@ -7,6 +7,10 @@ import time
 import environ
 import os
 
+logging.basicConfig(level=logging.INFO, filename='kouzhao.log', format='%(asctime)s %(message)s')
+
+log = logging.getLogger(__name__)
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 env = environ.Env()
 
@@ -16,11 +20,8 @@ notify_robot = env('NOTIFY_ROBOT', default='<请去企业微信创建一个机�
 # 请自己改下chromedriver的文件位置
 chromedriver = os.path.join(BASE_DIR, 'driver/mac/chromedriver')
 
-logging.basicConfig(level=logging.INFO, filename='kouzhao.log')
 
-log = logging.getLogger(__name__)
 log.info('通知地址：%s', notify_robot)
-
 
 class KouzhaoMonitor:
     def __init__(self, search_url, css_selector):
