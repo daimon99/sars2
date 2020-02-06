@@ -76,9 +76,9 @@ class KouzhaoMonitor(ABC):
                 }})
 
     def run(self):
+        time.sleep(1)
         self.driver.get(self.search_url)
         actions = ActionChains(self.driver)
-        time.sleep(5)
         items = self.driver.find_elements_by_css_selector(self.css_selector)
         log.info('检索到 %s 个商品', len(items))
         to_buy = []
@@ -91,6 +91,7 @@ class KouzhaoMonitor(ABC):
                         is_notify = False
                         break
                 if is_notify:
+                    print('有货!')
                     href = i.find_element_by_css_selector('a').get_attribute('href')
                     msg = '有货：\n' + text + '\n链接：' + href
                     log.info(msg)
