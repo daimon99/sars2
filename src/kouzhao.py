@@ -7,6 +7,8 @@ import time
 from abc import abstractmethod, ABC
 
 import environ
+from selenium.webdriver import ActionChains
+from selenium.webdriver.remote.webelement import WebElement
 
 logging.basicConfig(level=logging.INFO, filename='kouzhao.log', format='%(asctime)s %(message)s')
 
@@ -75,6 +77,7 @@ class KouzhaoMonitor(ABC):
 
     def run(self):
         self.driver.get(self.search_url)
+        actions = ActionChains(self.driver)
         time.sleep(5)
         items = self.driver.find_elements_by_css_selector(self.css_selector)
         log.info('检索到 %s 个商品', len(items))
@@ -92,11 +95,12 @@ class KouzhaoMonitor(ABC):
                     msg = '有货：\n' + text + '\n链接：' + href
                     log.info(msg)
                     import random
+                    actions.move_to_element(i).perform()
                     self.driver.get_screenshot_as_file(f'tmp-{random.randrange(1, 9999)}.png')
                     self._send_notice(msg)
-                    to_buy.append(href)
+                    to_buy.append(i)
         for i in to_buy:
-            self.screenshot(i)
+            self.screenshot(i.find_elements_by_css_selector('a').get_attribute('href'))
             self.autobuy(i)
 
     @property
@@ -119,7 +123,7 @@ class KouzhaoMonitor(ABC):
         self.driver.get_screenshot_as_file(filename)
 
     @abstractmethod
-    def autobuy(self, href):
+    def autobuy(self, element: WebElement):
         pass
 
     @abstractmethod
@@ -132,7 +136,7 @@ class WangyiMonitor(KouzhaoMonitor):
         self.driver.get('https://you.163.com/u/login')
         input('请登录 网易严选，以便有货的时候自动下订单')
 
-    def autobuy(self, href):
+    def autobuy(self, element):
         pass
 
     def __init__(self):
@@ -147,14 +151,15 @@ class JdMonitor(KouzhaoMonitor):
         self.driver.get('https://passport.jd.com/new/login.aspx?ReturnUrl=https%3A%2F%2Fwww.jd.com%2F')
         input('请登录京东网站，以便有货的时候自动下订单')
 
-    def autobuy(self, href):
+    def autobuy(self, element):
         try:
             driver = self.driver
-            driver.find_element_by_link_text('加入购物车').click()
+            element.find_element_by_link_text('加入购物车').click()
+            # driver.find_element_by_link_text('加入购物车').click()
             driver.find_element_by_link_text('去购物车结算').click()
             driver.find_element_by_link_text('去结算').click()
             driver.find_element_by_id('order-submit').click()
-        except Exception as e:
+        except Exception:
             log.exception('自动购买失败')
 
     def __init__(self):
