@@ -1,4 +1,5 @@
 *.log
+notebook/
 logs/
 .DS_store
 *.pyc

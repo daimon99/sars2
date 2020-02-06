@@ -97,7 +97,7 @@ class KouzhaoMonitor(ABC):
                     log.info(msg)
                     import random
                     actions.move_to_element(i).perform()
-                    self.driver.get_screenshot_as_file(f'tmp-{random.randrange(1, 9999)}.png')
+                    self.driver.get_screenshot_as_file(f'logs/tmp-{random.randrange(1, 9999)}.png')
                     self._send_notice(msg)
                     to_buy.append(i)
         for i in to_buy:
