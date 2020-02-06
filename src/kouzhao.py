@@ -78,6 +78,7 @@ class KouzhaoMonitor(ABC):
         time.sleep(5)
         items = self.driver.find_elements_by_css_selector(self.css_selector)
         log.info('检索到 %s 个商品', len(items))
+        to_buy = []
         for i in items:
             text = i.text
             if '一次性' in text and '口罩' in text:
@@ -90,9 +91,13 @@ class KouzhaoMonitor(ABC):
                     href = i.find_element_by_css_selector('a').get_attribute('href')
                     msg = '有货：\n' + text + '\n链接：' + href
                     log.info(msg)
+                    import random
+                    self.driver.get_screenshot_as_file(f'tmp-{random.randrange(1, 9999)}.png')
                     self._send_notice(msg)
-                    self.screenshot(href)
-                    self.autobuy(href)
+                    to_buy.append(href)
+        for i in to_buy:
+            self.screenshot(i)
+            self.autobuy(i)
 
     @property
     def driver(self):
@@ -115,7 +120,7 @@ class KouzhaoMonitor(ABC):
 
     @abstractmethod
     def autobuy(self, href):
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def login(self):

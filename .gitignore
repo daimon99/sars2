@@ -1,4 +1,6 @@
 *.log
+logs/
+.DS_store
 *.pyc
 .env
 .idea/
