@@ -2,13 +2,11 @@
 # coding: utf-8
 import datetime
 import logging
+import os
 import time
 from abc import abstractmethod, ABC
 
 import environ
-import os
-import json
-import pickle
 
 logging.basicConfig(level=logging.INFO, filename='kouzhao.log', format='%(asctime)s %(message)s')
 
@@ -27,30 +25,30 @@ log.info('通知地址：%s', notify_robot)
 
 
 class KouzhaoMonitor(ABC):
+    _driver = None
+    _is_headless = 0
+
     def __init__(self, search_url, css_selector, cookie_file):
-        self.is_headless = 1
-        self.driver = self._get_driver(self.is_headless)
-        self.driver.implicitly_wait(5)
         self.search_url = search_url
         self.notify_robot = notify_robot
         self.css_selector = css_selector
-        self.invalid_goods_keywords = '非卖品 售罄 国际 无货 婴儿口罩'.split(' ')
+        self.invalid_goods_keywords = '非卖品 售罄 国际 无货 婴儿口罩 儿童口罩'.split(' ')
         self.notify_history = {}
         self.duplicate_check_span_in_seconds = 60 * 5
-        self.driver_buy = self._get_driver(0)
-        input('为自动加购物车，请在这个窗口先登录, 之后请不要关掉这个窗口')
+        self.login()
 
-    def _get_options(self, is_headless):
+    @classmethod
+    def _get_options(cls, is_headless):
         from selenium.webdriver.chrome.options import Options
         chrome_options = Options()
-        chrome_options.add_argument('--user-data-dir=chrome-data')
-        if self.is_headless:
+        if cls._is_headless:
             chrome_options.add_argument("--headless")
         return chrome_options
 
-    def _get_driver(self, is_headless):
+    @classmethod
+    def _get_driver(cls, is_headless):
         from selenium import webdriver
-        return webdriver.Chrome(chrome_options=self._get_options(is_headless),
+        return webdriver.Chrome(chrome_options=cls._get_options(is_headless),
                                 executable_path=chromedriver)
 
     def _check_duplicate(self, text):
@@ -96,8 +94,19 @@ class KouzhaoMonitor(ABC):
                     self.screenshot(href)
                     self.autobuy(href)
 
-    def quit(self):
-        self.driver.quit()
+    @property
+    def driver(self):
+        if not KouzhaoMonitor._driver:
+            KouzhaoMonitor._driver = KouzhaoMonitor._get_driver(KouzhaoMonitor._is_headless)
+            KouzhaoMonitor._driver.implicitly_wait(5)
+        return KouzhaoMonitor._driver
+
+    @classmethod
+    def quit(cls):
+        try:
+            cls._driver.quit()
+        except:
+            pass
 
     def screenshot(self, href):
         filename = "logs/" + datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f.png')
@@ -108,8 +117,16 @@ class KouzhaoMonitor(ABC):
     def autobuy(self, href):
         raise NotImplementedError()
 
+    @abstractmethod
+    def login(self):
+        pass
+
 
 class WangyiMonitor(KouzhaoMonitor):
+    def login(self):
+        self.driver.get('https://you.163.com/u/login')
+        input('请登录 网易严选，以便有货的时候自动下订单')
+
     def autobuy(self, href):
         pass
 
@@ -121,12 +138,19 @@ class WangyiMonitor(KouzhaoMonitor):
 
 
 class JdMonitor(KouzhaoMonitor):
+    def login(self):
+        self.driver.get('https://passport.jd.com/new/login.aspx?ReturnUrl=https%3A%2F%2Fwww.jd.com%2F')
+        input('请登录京东网站，以便有货的时候自动下订单')
+
     def autobuy(self, href):
-        driver = self.driver_buy
-        driver.find_element_by_link_text('加入购物车').click()
-        driver.find_element_by_link_text('去购物车结算').click()
-        driver.find_element_by_link_text('去结算').click()
-        driver.find_element_by_id('order-submit').click()
+        try:
+            driver = self.driver
+            driver.find_element_by_link_text('加入购物车').click()
+            driver.find_element_by_link_text('去购物车结算').click()
+            driver.find_element_by_link_text('去结算').click()
+            driver.find_element_by_id('order-submit').click()
+        except Exception as e:
+            log.exception('自动购买失败')
 
     def __init__(self):
         search_url = 'https://search.jd.com/Search?keyword=%E5%8F%A3%E7%BD%A9%E4%B8%80%E6%AC%A1%E6%80%A7&enc=utf-8&qrst=1&rt=1&stop=1&vt=2&suggest=1.def.0.V17--12s0%2C20s0%2C38s0%2C97s0&wq=%E5%8F%A3%E7%BD%A9&wtype=1&click=1'
@@ -136,10 +160,16 @@ class JdMonitor(KouzhaoMonitor):
 
 
 if __name__ == '__main__':
-    wangyi = WangyiMonitor()
-    jd = JdMonitor()
-    while True:
-        log.info('网易检索中...')
-        wangyi.run()
-        log.info('京东检索中...')
-        jd.run()
+
+    try:
+        wangyi = WangyiMonitor()
+        jd = JdMonitor()
+        while True:
+            log.info('网易检索中...')
+            wangyi.run()
+            log.info('京东检索中...')
+            jd.run()
+    except Exception as e:
+        log.exception(e)
+        WangyiMonitor.quit()
+        JdMonitor.quit()
