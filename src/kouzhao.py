@@ -34,7 +34,7 @@ class KouzhaoMonitor(ABC):
         self.search_url = search_url
         self.notify_robot = notify_robot
         self.css_selector = css_selector
-        self.invalid_goods_keywords = '非卖品 售罄 国际 无货 婴儿口罩 儿童口罩'.split(' ')
+        self.invalid_goods_keywords = '非卖品 售罄 国际 无货 婴儿 儿童'.split(' ')
         self.notify_history = {}
         self.duplicate_check_span_in_seconds = 60 * 5
         self.login()
@@ -97,11 +97,7 @@ class KouzhaoMonitor(ABC):
                     log.info(msg)
                     import random
                     actions.move_to_element(i).perform()
-                    try:
-                        self.driver.get_screenshot_as_file(f'logs/tmp-{random.randrange(1, 9999)}.png')
-                        self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
-                    except:
-                        log.exception('截屏失败')
+                    self.screenshot()
                     to_buy.append((href, msg))
         for goods in to_buy:
             self.screenshot(goods[0])
@@ -126,10 +122,14 @@ class KouzhaoMonitor(ABC):
         except:
             pass
 
-    def screenshot(self, href):
-        filename = "logs/" + datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f.png')
-        self.driver.get(href)
-        self.driver.get_screenshot_as_file(filename)
+    def screenshot(self, href=None):
+        try:
+            filename = "logs/" + datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f.png')
+            if href:
+                self.driver.get(href)
+            self.driver.get_screenshot_as_file(filename)
+        except:
+            log.exception('截屏失败')
 
     @abstractmethod
     def autobuy(self, href: str):
@@ -164,6 +164,7 @@ class JdMonitor(KouzhaoMonitor):
         try:
             driver = self.driver
             driver.get(href)
+            self.screenshot()
             driver.find_element_by_link_text('加入购物车').click()
             # driver.find_element_by_link_text('加入购物车').click()
             driver.find_element_by_link_text('去购物车结算').click()
