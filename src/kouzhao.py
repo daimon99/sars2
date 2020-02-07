@@ -98,11 +98,16 @@ class KouzhaoMonitor(ABC):
                     import random
                     actions.move_to_element(i).perform()
                     self.driver.get_screenshot_as_file(f'logs/tmp-{random.randrange(1, 9999)}.png')
-                    self._send_notice(msg)
-                    to_buy.append(i)
-        for i in to_buy:
-            self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
-            self.autobuy(i)
+                    self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
+                    to_buy.append((href, msg))
+        for goods in to_buy:
+            self.screenshot(goods[0])
+            buy_ok = self.autobuy(goods[0])
+            if buy_ok:
+                log.info('购买成功: %s', goods)
+                self._send_notice(goods[1])
+            else:
+                log.info('购买失败：%s', goods)
 
     @property
     def driver(self):
@@ -124,7 +129,7 @@ class KouzhaoMonitor(ABC):
         self.driver.get_screenshot_as_file(filename)
 
     @abstractmethod
-    def autobuy(self, element: WebElement):
+    def autobuy(self, href: str):
         pass
 
     @abstractmethod
@@ -137,7 +142,7 @@ class WangyiMonitor(KouzhaoMonitor):
         self.driver.get('https://you.163.com/u/login')
         input('请登录 网易严选，以便有货的时候自动下订单')
 
-    def autobuy(self, element):
+    def autobuy(self, href):
         pass
 
     def __init__(self):
@@ -152,16 +157,19 @@ class JdMonitor(KouzhaoMonitor):
         self.driver.get('https://passport.jd.com/new/login.aspx?ReturnUrl=https%3A%2F%2Fwww.jd.com%2F')
         input('请登录京东网站，以便有货的时候自动下订单')
 
-    def autobuy(self, element):
+    def autobuy(self, href):
         try:
             driver = self.driver
-            element.find_element_by_link_text('加入购物车').click()
+            driver.get(href)
+            driver.find_element_by_link_text('加入购物车').click()
             # driver.find_element_by_link_text('加入购物车').click()
             driver.find_element_by_link_text('去购物车结算').click()
             driver.find_element_by_link_text('去结算').click()
             driver.find_element_by_id('order-submit').click()
+            return True
         except Exception:
             log.exception('自动购买失败')
+            return False
 
     def __init__(self):
         search_url = 'https://search.jd.com/Search?keyword=%E5%8F%A3%E7%BD%A9%E4%B8%80%E6%AC%A1%E6%80%A7&enc=utf-8&qrst=1&rt=1&stop=1&vt=2&suggest=1.def.0.V17--12s0%2C20s0%2C38s0%2C97s0&wq=%E5%8F%A3%E7%BD%A9&wtype=1&click=1'
