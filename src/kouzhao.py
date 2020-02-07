@@ -101,7 +101,7 @@ class KouzhaoMonitor(ABC):
                     self._send_notice(msg)
                     to_buy.append(i)
         for i in to_buy:
-            self.screenshot(i.find_elements_by_css_selector('a').get_attribute('href'))
+            self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
             self.autobuy(i)
 
     @property
