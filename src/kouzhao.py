@@ -97,8 +97,11 @@ class KouzhaoMonitor(ABC):
                     log.info(msg)
                     import random
                     actions.move_to_element(i).perform()
-                    self.driver.get_screenshot_as_file(f'logs/tmp-{random.randrange(1, 9999)}.png')
-                    self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
+                    try:
+                        self.driver.get_screenshot_as_file(f'logs/tmp-{random.randrange(1, 9999)}.png')
+                        self.screenshot(i.find_element_by_css_selector('a').get_attribute('href'))
+                    except:
+                        log.exception('截屏失败')
                     to_buy.append((href, msg))
         for goods in to_buy:
             self.screenshot(goods[0])
